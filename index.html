@@ -563,7 +563,9 @@ const inViewer=!!window.claude||window.top!==window.self;
 let ovUrl=null,ovFile=null;
 // Phones and tablets: saving through the share sheet puts the sheet in the Photos app;
 // a plain download only lands in Files.
-const touch=window.matchMedia('(pointer:coarse)').matches;
+// iPadOS with a keyboard or trackpad reports a fine pointer and a Mac user agent, so check touch points too.
+const ua=navigator.userAgent||'';
+const touch=/iPhone|iPad|iPod|Android/i.test(ua)||(/Macintosh/.test(ua)&&navigator.maxTouchPoints>1)||window.matchMedia('(pointer:coarse)').matches;
 function canShareFile(f){try{return !inViewer&&!!navigator.canShare&&navigator.canShare({files:[f]})}catch(e){return false}}
 function showOverlay(blob,name){
   if(ovUrl)URL.revokeObjectURL(ovUrl);ovUrl=URL.createObjectURL(blob);

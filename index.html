@@ -201,7 +201,7 @@ button{font:inherit;cursor:pointer;border-radius:5px;border:1px solid var(--line
       <p class="hint" id="exportHint"></p>
     </section>
 
-    <p class="privacy" data-i18n="privacy"></p>
+    <p class="privacy"><span data-i18n="privacy"></span> · v6</p>
   </aside>
 
   <main class="stage" id="stage">
@@ -218,6 +218,7 @@ button{font:inherit;cursor:pointer;border-radius:5px;border:1px solid var(--line
   <p id="ovText"></p>
   <div class="btn-row">
     <button type="button" class="btn-main" id="ovShare" hidden></button>
+    <button type="button" id="ovDl" hidden></button>
     <button type="button" id="ovClose"></button>
   </div>
 </div>
@@ -241,7 +242,7 @@ const I18N={
   grade:'ฟิลเตอร์คอนทราสต์',exposure:'เวลาฉาย',grain:'เกรน',dust:'ฝุ่นบนเนกาทีฟ',vignette:'แสงตกขอบ',jitter:'วางแถบด้วยมือ',
   g_notes:'โน้ตปากกาเมจิก',roll:'ม้วน',note:'หมายเหตุ',
   g_marks:'ขีดเลือกภาพ',marks_hint:'แตะเฟรมบนคอนแทคเพื่อขีดด้วยดินสอเขียนกระจกสีแดง: กรอบ → ติ๊ก → กากบาท → ลบ',clear_marks:'ล้างรอยขีด',
-  save:'บันทึก JPG 300 dpi',saving:'กำลังอัดภาพ…',saved:'บันทึกแล้ว',cancelled:'ยกเลิกการบันทึก',busy:'มีหน้าต่างบันทึกเปิดอยู่ ลองอีกครั้ง',longpress:'มือถือ: กดค้างที่ภาพแล้วเลือกบันทึกภาพ · คอมพิวเตอร์: คลิกขวาแล้วเลือก Save image',close:'ปิด',toPhotos:'บันทึกลงแอปรูปภาพ',sharehint:'กดปุ่มด้านล่างแล้วเลือก "บันทึกภาพ" ภาพจะเข้าแอปรูปภาพ (หรือกดค้างที่ภาพ)',sample:'ภาพตัวอย่าง',
+  save:'บันทึก JPG 300 dpi',saving:'กำลังอัดภาพ…',saved:'บันทึกแล้ว',cancelled:'ยกเลิกการบันทึก',busy:'มีหน้าต่างบันทึกเปิดอยู่ ลองอีกครั้ง',longpress:'มือถือ: กดค้างที่ภาพแล้วเลือกบันทึกภาพ · คอมพิวเตอร์: คลิกขวาแล้วเลือก Save image',close:'ปิด',toPhotos:'บันทึกลงแอปรูปภาพ',dlFile:'ดาวน์โหลดเป็นไฟล์',pchint:'กด "ดาวน์โหลดเป็นไฟล์" หรือคลิกขวาที่ภาพแล้วเลือก Save image',sharehint:'กดปุ่มด้านล่างแล้วเลือก "บันทึกภาพ" ภาพจะเข้าแอปรูปภาพ (หรือกดค้างที่ภาพ)',sample:'ภาพตัวอย่าง',
   privacy:'ภาพของคุณประมวลผลในเครื่องนี้เท่านั้น ไม่มีการอัปโหลดไปที่ใด',
   gradeN:'เกรด ',stops:' สต็อป',frames:' เฟรม',strips:' แถบ',portrait:'แนวตั้ง',landscape:'แนวนอน',oneone:'อัดจริง 1:1',scaled:'ย่อ ',
   px:' px ตามกระดาษที่เลือก',backSample:'กลับไปใช้ภาพตัวอย่าง',loading:n=>`กำลังโหลด ${n} ไฟล์…`,added:n=>`เพิ่ม ${n} ภาพแล้ว`,
@@ -254,7 +255,7 @@ const I18N={
   grade:'Contrast filter',exposure:'Exposure',grain:'Grain',dust:'Dust on negatives',vignette:'Light falloff',jitter:'Hand-laid strips',
   g_notes:'Marker notes',roll:'Roll',note:'Note',
   g_marks:'Mark your picks',marks_hint:'Tap a frame to mark it with red grease pencil: box → tick → cross → clear',clear_marks:'Clear marks',
-  save:'Save JPG 300 dpi',saving:'Printing…',saved:'Saved',cancelled:'Save cancelled',busy:'A save window is already open — try again',longpress:'Phone: press and hold the image, then Save. Computer: right-click and choose Save image.',close:'Close',toPhotos:'Save to Photos',sharehint:'Tap the button below and choose "Save Image" to put it in your Photos (or press and hold the image).',sample:'Example frames',
+  save:'Save JPG 300 dpi',saving:'Printing…',saved:'Saved',cancelled:'Save cancelled',busy:'A save window is already open — try again',longpress:'Phone: press and hold the image, then Save. Computer: right-click and choose Save image.',close:'Close',toPhotos:'Save to Photos',dlFile:'Download file',pchint:'Click "Download file", or right-click the image and choose Save image.',sharehint:'Tap the button below and choose "Save Image" to put it in your Photos (or press and hold the image).',sample:'Example frames',
   privacy:'Your images are processed on this device only. Nothing is uploaded.',
   gradeN:'Grade ',stops:' stop',frames:' frames',strips:' strips',portrait:'portrait',landscape:'landscape',oneone:'true contact 1:1',scaled:'scaled ',
   px:' px at the chosen paper size',backSample:'Back to example frames',loading:n=>`Loading ${n} files…`,added:n=>`Added ${n} images`,
@@ -560,23 +561,25 @@ document.addEventListener('drop',e=>{if(e.dataTransfer&&e.dataTransfer.files.len
 // so the finished sheet is shown full-size to save with a long-press (phone) or right-click (computer).
 // Hosted anywhere else (your own website), the file downloads directly.
 const inViewer=!!window.claude||window.top!==window.self;
-let ovUrl=null,ovFile=null;
-// Phones and tablets: saving through the share sheet puts the sheet in the Photos app;
-// a plain download only lands in Files.
-// iPadOS with a keyboard or trackpad reports a fine pointer and a Mac user agent, so check touch points too.
-const ua=navigator.userAgent||'';
-const touch=/iPhone|iPad|iPod|Android/i.test(ua)||(/Macintosh/.test(ua)&&navigator.maxTouchPoints>1)||window.matchMedia('(pointer:coarse)').matches;
+let ovUrl=null,ovFile=null,ovName='';
+// Every device gets the finished sheet on screen with its own choices: the share sheet
+// (phones/tablets: "Save Image" puts it in Photos) and a plain file download (computers).
 function canShareFile(f){try{return !inViewer&&!!navigator.canShare&&navigator.canShare({files:[f]})}catch(e){return false}}
 function showOverlay(blob,name){
-  if(ovUrl)URL.revokeObjectURL(ovUrl);ovUrl=URL.createObjectURL(blob);
+  if(ovUrl)URL.revokeObjectURL(ovUrl);ovUrl=URL.createObjectURL(blob);ovName=name;
   ovFile=new File([blob],name,{type:'image/jpeg'});
   const share=canShareFile(ovFile);
-  $('ovImg').src=ovUrl;$('ovText').textContent=share?t('sharehint'):t('longpress');
+  $('ovImg').src=ovUrl;
+  $('ovText').textContent=inViewer?t('longpress'):(share?t('sharehint'):t('pchint'));
   $('ovShare').textContent=t('toPhotos');$('ovShare').hidden=!share;
+  $('ovDl').textContent=t('dlFile');$('ovDl').hidden=inViewer;
   $('ovClose').textContent=t('close');$('overlay').hidden=false;
 }
 $('ovShare').addEventListener('click',async()=>{
   try{await navigator.share({files:[ovFile]})}catch(e){/* closed the share sheet */}
+});
+$('ovDl').addEventListener('click',()=>{
+  const a=document.createElement('a');a.href=ovUrl;a.download=ovName;document.body.appendChild(a);a.click();a.remove();toast(t('saved'));
 });
 $('ovClose').addEventListener('click',()=>{$('overlay').hidden=true});
 $('export').addEventListener('click',async()=>{
@@ -587,10 +590,6 @@ $('export').addEventListener('click',async()=>{
     render(c.getContext('2d'),k,Lo);
     const blob=await new Promise(r=>c.toBlob(r,'image/jpeg',.93));
     const name=('contact-'+(state.roll||'sheet')).replace(/[^\w\u0E00-\u0E7F-]+/g,'-').toLowerCase()+'.jpg';
-    if(!inViewer&&!touch){
-      const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();
-      setTimeout(()=>URL.revokeObjectURL(url),60000);toast(t('saved'));return;
-    }
     showOverlay(blob,name);
   }finally{btn.disabled=false;btn.textContent=t('save')}
 });
